@@ -1,0 +1,11 @@
+# Ignore heavy PDFs, raw image directories and temporary files
+*.pdf
+*.zip
+*.rar
+examen/
+*.py
+*.js
+!index.html
+!simulador_examen_tpin2.html
+!README.md
+!.gitignore
