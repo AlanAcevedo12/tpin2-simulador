@@ -1197,6 +1197,9 @@ body {
       <button class="btn btn-primary" onclick="submitExam()" id="submit-exam-btn">
         <span>🏁 Terminar intento y calificar...</span>
       </button>
+      <button class="btn btn-secondary" onclick="returnToIntroScreen()" id="review-exit-btn" style="display: none;">
+        <span>📋 Finalizar revisión y volver a la portada</span>
+      </button>
     </div>
 
   </main>
@@ -1302,6 +1305,14 @@ function selectModel(modelId) {
   isAttemptStarted = false;
   clearInterval(timerInterval);
 
+  // Asegurar visibilidad de botones de finalizar examen
+  const submitBtn = document.getElementById('submit-exam-btn');
+  if (submitBtn) submitBtn.style.display = '';
+  const sideSubmitBtn = document.getElementById('sidebar-submit-btn');
+  if (sideSubmitBtn) sideSubmitBtn.style.display = '';
+  const revExitBtn = document.getElementById('review-exit-btn');
+  if (revExitBtn) revExitBtn.style.display = 'none';
+
   // Pestañas activas
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   const activeTab = document.getElementById('tab-' + modelId);
@@ -1364,11 +1375,30 @@ function switchModel(modelId) {
 // Iniciar intento activo
 function startAttempt() {
   isAttemptStarted = true;
+  isSubmitted = false;
+  userAnswers = {};
+  flaggedQuestions.clear();
   startTime = new Date();
 
-  // Ocultar pantalla previa y mostrar examen
+  // Si es modelo aleatorio, generar una nueva tanda de preguntas
+  if (currentModelId === 'random') {
+    const all = [...EXAM_DATABASE.questions];
+    shuffleArray(all);
+    currentQuestions = all.slice(0, 10);
+  }
+
+  // Ocultar pantalla previa y resultados, y mostrar examen
   document.getElementById('quiz-intro-screen').style.display = 'none';
+  document.getElementById('results-card').style.display = 'none';
   document.getElementById('exam-active-layout').style.display = 'grid';
+
+  // RESTAURAR BOTONES DE FINALIZAR EXAMEN
+  const submitBtn = document.getElementById('submit-exam-btn');
+  if (submitBtn) submitBtn.style.display = '';
+  const sideSubmitBtn = document.getElementById('sidebar-submit-btn');
+  if (sideSubmitBtn) sideSubmitBtn.style.display = '';
+  const revExitBtn = document.getElementById('review-exit-btn');
+  if (revExitBtn) revExitBtn.style.display = 'none';
 
   // Info card
   document.getElementById('exam-card-title').textContent = document.getElementById('intro-title').textContent;
@@ -1399,13 +1429,27 @@ function startAttempt() {
 
 function returnToIntroScreen() {
   if (isAttemptStarted && !isSubmitted) {
-    if (!confirm("El examen está en curso. ¿Desea regresar a la portada? Se pausará su intento.")) {
+    if (!confirm("El examen está en curso. ¿Desea regresar a la portada? Su intento actual no se guardará.")) {
       return;
     }
   }
+  isAttemptStarted = false;
+  isSubmitted = false;
+  userAnswers = {};
+  flaggedQuestions.clear();
   clearInterval(timerInterval);
+
+  // Restaurar visibilidad de botones de finalizar
+  const submitBtn = document.getElementById('submit-exam-btn');
+  if (submitBtn) submitBtn.style.display = '';
+  const sideSubmitBtn = document.getElementById('sidebar-submit-btn');
+  if (sideSubmitBtn) sideSubmitBtn.style.display = '';
+  const revExitBtn = document.getElementById('review-exit-btn');
+  if (revExitBtn) revExitBtn.style.display = 'none';
+
   document.getElementById('quiz-intro-screen').style.display = 'block';
   document.getElementById('exam-active-layout').style.display = 'none';
+  document.getElementById('results-card').style.display = 'none';
   renderAttemptsHistory(currentModelId);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -2036,8 +2080,12 @@ function submitExam() {
 
   document.getElementById('results-card').style.display = 'block';
   document.getElementById('meta-status').textContent = "Finalizado";
-  document.getElementById('submit-exam-btn').style.display = 'none';
-  document.getElementById('sidebar-submit-btn').style.display = 'none';
+  const submitBtn = document.getElementById('submit-exam-btn');
+  if (submitBtn) submitBtn.style.display = 'none';
+  const sideSubmitBtn = document.getElementById('sidebar-submit-btn');
+  if (sideSubmitBtn) sideSubmitBtn.style.display = 'none';
+  const revExitBtn = document.getElementById('review-exit-btn');
+  if (revExitBtn) revExitBtn.style.display = 'none';
 
   // Guardar Intento en el Historial Persistente
   recordAttemptInHistory({
@@ -2151,9 +2199,13 @@ function reviewHistoricalAttempt(modelId, attemptIdx) {
   document.getElementById('meta-max-points').textContent = att.maxPoints.toFixed(2) + " puntos";
   document.getElementById('meta-time-display').textContent = att.timeSpent || "--:--";
 
-  // Hide submit action buttons in review
-  document.getElementById('submit-exam-btn').style.display = 'none';
-  document.getElementById('sidebar-submit-btn').style.display = 'none';
+  // Hide submit action buttons in review and show exit button
+  const submitBtn = document.getElementById('submit-exam-btn');
+  if (submitBtn) submitBtn.style.display = 'none';
+  const sideSubmitBtn = document.getElementById('sidebar-submit-btn');
+  if (sideSubmitBtn) sideSubmitBtn.style.display = 'none';
+  const revExitBtn = document.getElementById('review-exit-btn');
+  if (revExitBtn) revExitBtn.style.display = 'inline-flex';
 
   // Render question cards with user's past answers
   renderQuestionsList();
